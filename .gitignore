@@ -1,0 +1,5 @@
+__pycache__/
+.hypothesis/
+pg.egg-info/
+ve/
+
