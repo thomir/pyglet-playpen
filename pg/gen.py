@@ -92,7 +92,9 @@ class Map:
         """A generator that returns (x, y, tile) tuples."""
         for x in self._data:
             for y in self._data[x]:
-                yield (x, y, self._data[x][y])
+                tile = self._data[x][y]
+                assert tile is not None
+                yield (x, y, tile)
 
     def compose_map(self, map, x, y, safe=True):
         """Copy the contents of 'map' into this map, starting at (x, y).
@@ -117,7 +119,7 @@ class Map:
                     )
 
         for tile_x, tile_y, tile in map.get_tiles():
-            self.set_tile(x + tile_x, y + tile_y, map.get_tile(x, y))
+            self.set_tile(x + tile_x, y + tile_y, map.get_tile(tile_x, tile_y))
 
 
 def make_room(width: int, height: int, tileset: TileSet) -> Map:

@@ -11,6 +11,7 @@ __all__ = (
 )
 
 small_size = st.integers(min_value=1, max_value=16)
+small_position = st.integers(min_value=-32, max_value=32)
 
 
 @st.composite

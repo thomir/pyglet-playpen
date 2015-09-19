@@ -3,12 +3,9 @@ import pyglet
 
 
 def run_tile_viewer(map):
-    window = pyglet.window.Window()
-    label = pyglet.text.Label('Hello, world',
-                          font_name='Times New Roman',
-                          font_size=36,
-                          x=window.width//2, y=window.height//2,
-                          anchor_x='center', anchor_y='center')
+    window = pyglet.window.Window(
+        fullscreen=True
+    )
 
     @window.event
     def on_draw():
@@ -17,7 +14,8 @@ def run_tile_viewer(map):
 
     @window.event
     def on_key_press(symbol, modifiers):
-        print('A key was pressed')
+        if symbol == pyglet.window.key.ESCAPE:
+            window.close()
 
     pyglet.app.run()
 

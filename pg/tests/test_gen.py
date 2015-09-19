@@ -106,6 +106,22 @@ class TestMap(TestCase):
             m.get_height()
         )
 
+    @given(st.streaming(pgst.room()), st.streaming(pgst.small_position))
+    def test_composing_does_not_insert_None_tiles(self, rooms, positions):
+        m = gen.Map()
+        for i in range(50):
+            try:
+                m.compose_map(
+                    next(rooms.generator),
+                    next(positions.generator),
+                    next(positions.generator),
+                )
+            except ValueError:
+                pass
+        self.assertTrue(
+            all([t[2] for t in m.get_tiles()])
+        )
+
 
 class TestBounds(TestCase):
 
