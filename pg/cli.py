@@ -16,8 +16,8 @@ def main():
         try:
             map.compose_map(
                 gen.make_room(
-                    random.randint(3, 10),
-                    random.randint(3, 10),
+                    random.randint(5, 15),
+                    random.randint(5, 15),
                     tileset,
                 ),
                 random.randint(0, 50),
@@ -26,4 +26,5 @@ def main():
         except ValueError:
             pass
 
+    map = map.get_normalised_map()
     run_tile_viewer(map)
