@@ -1,4 +1,6 @@
-from functools import partial, lru_cache
+from collections import defaultdict
+from functools import lru_cache
+import itertools
 
 from pkg_resources import resource_stream
 
@@ -8,19 +10,23 @@ import pyglet
 from pyglet import gl
 
 
-def run_tile_viewer(map):
-    app = TileViewerApp(map)
+def run_tile_viewer(map, tileset):
+    # pyglet.options['debug_graphics_batch'] = True
+    app = TileViewerApp(map, tileset)
+    gl.glEnable(gl.GL_TEXTURE_2D)
+
     pyglet.app.run()
 
 
 class TileViewerApp:
 
-    def __init__(self, map):
+    def __init__(self, map, tileset):
         config = gl.Config()
         config.double_buffer = True
         self.window = pyglet.window.Window(
             fullscreen=True,
             config=config,
+            vsync=False,
         )
 
         self.window.on_draw = self.on_draw
@@ -28,10 +34,11 @@ class TileViewerApp:
         # pyglet.clock.set_fps_limit(60)
         self.keys = pyglet.window.key.KeyStateHandler()
         self.window.push_handlers(self.keys)
+
         pyglet.clock.schedule_interval(self.update, 1.0 / 60.0)
         self.fps_display = pyglet.clock.ClockDisplay()
 
-        self.tile_renderer = TileMapRenderer(map)
+        self.tile_renderer = TileMapRenderer(map, tileset)
         self.camera = Camera()
 
     def on_draw(self):
@@ -64,6 +71,34 @@ def get_tile_image(tile_name):
     return pyglet.image.load(tile_filename, file=tile_stream)
 
 
+class TileLibrary:
+
+    def __init__(self, filename, rows, columns):
+        self.image = get_tile_image(filename)
+        self.image_grid = pyglet.image.ImageGrid(self.image, rows, columns)
+        self.texture_grid = pyglet.image.TextureGrid(self.image_grid)
+
+    def get_texture_coords_for_tile(self, row, column):
+        # The texture coords need some processing. We get 3D coords for a
+        # quad, but we need 2D coords for two triangles.
+        coords = self.texture_grid[(row, column)].tex_coords
+        # First, filter out every third element, converting X,Y,Z triplets
+        # into (X,Y) pairs:
+        coords_2d = tuple(zip(coords[0::3], coords[1::3]))
+        # Now turn the quad into two triples:
+        return tuple(itertools.chain(
+            coords_2d[0],
+            coords_2d[1],
+            coords_2d[2],
+            coords_2d[2],
+            coords_2d[3],
+            coords_2d[0],
+        ))
+
+    def get_id(self):
+        return self.texture_grid.id
+
+
 def get_tile_size():
     return 16
 
@@ -72,56 +107,42 @@ class TileMapRenderer:
 
     """Loads resources for, and renders a tile map."""
 
-    def __init__(self, tilemap):
+    def __init__(self, tilemap, tileset):
+        self._tile_set = tileset
+        self._tile_library = TileLibrary('set_0', 6, 7)
         self._map = tilemap
-        self._tiles = []
+        # self._tiles = []
         tilesize = get_tile_size()
-        for tx, ty, tile in self._map.get_tiles():
+        self.tile_batch = pyglet.graphics.Batch()
+
+        for tx, ty, tile_name in self._map.get_tiles():
             x = tx * tilesize
             y = ty * tilesize
-            self._tiles.append(DrawnTile(x, y, tile.name, tilesize))
-
-    def draw_tile_map(self):
-        for t in self._tiles:
-            t.draw()
-
-
-class DrawnTile:
-
-    def __init__(self, x, y, name, tilesize):
-        self.verts = pyglet.graphics.vertex_list(
-            6,
-            (
-                'v2i\static',
+            self.tile_batch.add(
+                6,
+                gl.GL_TRIANGLES,
+                None,  # no group.
                 (
-                    x, y,
-                    x + tilesize, y,
-                    x + tilesize, y + tilesize,
-                    x + tilesize, y + tilesize,
-                    x, y + tilesize,
-                    x, y,
-                )
-            ),
-            (
-                't2f',
+                    'v2i\static',
+                    (
+                        x, y,
+                        x + tilesize, y,
+                        x + tilesize, y + tilesize,
+                        x + tilesize, y + tilesize,
+                        x, y + tilesize,
+                        x, y,
+                    )
+                ),
                 (
-                    0.0, 0.0,
-                    1.0, 0.0,
-                    1.0, 1.0,
-                    1.0, 1.0,
-                    0.0, 1.0,
-                    0.0, 0.0,
+                    't2f\static', self._tile_library.get_texture_coords_for_tile(
+                        *self._tile_set[tile_name].name
+                    )
                 )
             )
-        )
-        self.tile_name = name
-        self.image = get_tile_image(name)
-        self.texture = self.image.get_texture()
 
-    def draw(self):
-        gl.glEnable(self.texture.target)        # typically target is GL_TEXTURE_2D
-        gl.glBindTexture(self.texture.target, self.texture.id)
-        self.verts.draw(gl.GL_TRIANGLES)
+    def draw_tile_map(self):
+        gl.glBindTexture(gl.GL_TEXTURE_2D, self._tile_library.get_id())
+        self.tile_batch.draw()
 
 
 class Camera:

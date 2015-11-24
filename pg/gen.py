@@ -122,15 +122,33 @@ class Map:
             self.set_tile(x + tile_x, y + tile_y, map.get_tile(tile_x, tile_y))
 
 
-def make_room(width: int, height: int, tileset: TileSet) -> Map:
+def make_room(width: int, height: int) -> Map:
     if width <= 0 or height <= 0:
         raise ValueError("Width and Height parameters must both be > 0")
     room = Map()
     for x in range(width):
         for y in range(height):
             if x == 0 or y == 0 or x == width-1 or y == height-1:
-                tile = tileset['wall']
+                tile = 'wall'
             else:
-                tile = tileset['floor']
+                tile = 'floor'
             room.set_tile(x, y, tile)
     return room
+
+
+class LevelAlgorithm:
+
+    @staticmethod
+    def get_strategy(name):
+        return {
+            'random_room': RandomRooms,
+        }[name]
+
+    def make_map(self):
+        """Make a map, returning an instance of Map."""
+
+
+class RandomRooms(LevelAlgorithm):
+
+    def make_map(self):
+        pass

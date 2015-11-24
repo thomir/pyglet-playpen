@@ -19,7 +19,7 @@ def room(draw):
     """A strategy that generates and returns rooms."""
     width = draw(small_size)
     height = draw(small_size)
-    return gen.make_room(width, height, create_test_tileset())
+    return gen.make_room(width, height)
 
 
 def create_test_tileset():

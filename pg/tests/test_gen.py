@@ -151,21 +151,21 @@ class TestRoomGeneration(TestCase):
         self.tileset = pgst.create_test_tileset()
 
     def test_creates_map(self):
-        room = gen.make_room(10, 10, self.tileset)
+        room = gen.make_room(10, 10)
         self.assertIsInstance(room, gen.Map)
 
     @given(pgst.small_size, pgst.small_size)
     def test_map_is_the_correct_size(self, width, height):
-        room = gen.make_room(width, height, self.tileset)
+        room = gen.make_room(width, height)
         self.assertEqual(width, room.get_width())
         self.assertEqual(height, room.get_height())
 
     @given(st.integers(max_value=0), st.integers(max_value=0))
     def test_invalid_sizes(self, width, height):
         with self.assertRaises(ValueError):
-            gen.make_room(width, height, self.tileset)
+            gen.make_room(width, height)
 
     @given(pgst.small_size, pgst.small_size)
     def test_rooms_are_normalised(self, width, height):
-        room = gen.make_room(width, height, self.tileset)
+        room = gen.make_room(width, height)
         self.assertTrue(room.is_normalised())
